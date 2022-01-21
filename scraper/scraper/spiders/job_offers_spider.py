@@ -1,7 +1,11 @@
+import sys
+
 import scrapy
 import redis
 
-from . import config
+sys.path.append("..\..")
+
+from config import settings
 
 
 class BaseJobOfferSpider(scrapy.Spider):
@@ -29,7 +33,7 @@ class BaseJobOfferSpider(scrapy.Spider):
         self.request_count += 1
         
         next_page = response.css(self.next_page_selector).attrib["href"]
-        if next_page is not None and self.request_count < config.MAX_REQUESTS:
+        if next_page is not None and self.request_count < settings.MAX_REQUESTS:
             next_page = response.urljoin(next_page)
             yield scrapy.Request(next_page, callback=self.parse)
 
@@ -39,7 +43,7 @@ class JobOfferSpider1(BaseJobOfferSpider):
 
     name = "bdg"
     start_urls = [
-        config.SCRAPED_URLS[name],
+        settings.SCRAPED_URLS[name],
     ]
 
     def parse_single(self, offer):
@@ -59,5 +63,5 @@ class JobOfferSpider2(BaseJobOfferSpider):
 
     name = "nfj"
     start_urls = [
-        config.SCRAPED_URLS[name]
+        settings.SCRAPED_URLS[name]
     ]
