@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# This project
+test_workspace
+data
+config.py
+docker-compose.yml
