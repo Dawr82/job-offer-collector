@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+
+  redis:
+    networks:
+      - main
+    image: redis:latest
+    container_name: redis-db
+    command: bash -c "redis-server --appendonly yes "
+    ports: 
+      - "6379:6379"
+    volumes:
+      - "redis-db-storage:/data"
+
+  flask:
+    networks:
+      - main
+    build: ./api
+    image: flask-api:latest
+    container_name: flask-api
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+
+  splash:
+    networks:
+      - main
+    image: scrapinghub/splash
+    container_name: splash
+    ports:
+      - "8050:8050"
+
+
+volumes:
+  redis-db-storage:
+
+
+networks:
+  main:
+    driver: bridge
+    enable_ipv6: false
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.240.0/24
+          gateway: 172.16.240.1

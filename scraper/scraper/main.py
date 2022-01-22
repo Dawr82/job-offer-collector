@@ -10,7 +10,7 @@ from spiders.job_offers_spider import NFJJobOfferSpider, BDGJobOfferSpider
 
 sys.path.append("..")
 
-from config import settings
+from config import settings, sns
 
 
 JSON_PATHS = {
@@ -65,7 +65,7 @@ def scrape() -> None:
 def save() -> None:
     redis_client = redis.Redis(host="localhost", port=6379)
 
-    for website in settings.SCRAPED_URLS:
+    for website in sns.SCRAPED_URLS:
         try:
             with open(JSON_PATHS[website], "r") as f:
                 redis_client.set(website, json.dumps(json.load(f)))
