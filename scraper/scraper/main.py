@@ -6,7 +6,7 @@ import logging
 import redis
 from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner, Crawler
-from spiders.job_offers_spider import JobOfferSpider2, JobOfferSpider1
+from spiders.job_offers_spider import NFJJobOfferSpider, BDGJobOfferSpider
 
 sys.path.append("..")
 
@@ -47,8 +47,8 @@ def get_crawler_settings(feeds_filename: str) -> dict:
 
 
 def start_crawling(runner: CrawlerRunner) -> None:
-    crawler_bdg = Crawler(JobOfferSpider1, get_crawler_settings("bdg"))
-    crawler_nfj = Crawler(JobOfferSpider2, get_crawler_settings("nfj"))
+    crawler_bdg = Crawler(BDGJobOfferSpider, get_crawler_settings("bdg"))
+    crawler_nfj = Crawler(NFJJobOfferSpider, get_crawler_settings("nfj"))
     runner.crawl(crawler_bdg)
     runner.crawl(crawler_nfj)
 
@@ -73,8 +73,9 @@ def save() -> None:
             print(f"{exc.__class__.__name__}: No data for [{website}] website in {os.path.abspath(settings.DATA_JSON_PATH)}.")
         except KeyError as exc:
             print(f"{exc.__class__.__name__}: This website is currently not supported.")
-        except Exception:
-            print(f"An error occured during saving to Redis database.")
+        except Exception as exc:
+            print(exc)
+            print(f"{exc.__class__.__name__}: An error occured during saving to Redis database.")
 
 
 def main() -> None:
