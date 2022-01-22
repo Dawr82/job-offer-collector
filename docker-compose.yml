@@ -32,6 +32,17 @@ services:
     ports:
       - "8050:8050"
 
+  streamlit:
+    networks:
+      - main
+    build: ./frontend
+    image: streamlit-frontend
+    container_name: streamlit-frontend
+    ports:
+      - "9000:9000"
+    depends_on:
+      - flask
+
 
 volumes:
   redis-db-storage:
