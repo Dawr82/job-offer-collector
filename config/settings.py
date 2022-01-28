@@ -6,7 +6,7 @@ DATA_DIRECTORY = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"
 DATA_JSON_PATH = os.path.join(DATA_DIRECTORY, "json")
 DATA_CSV_PATH = os.path.join(DATA_DIRECTORY, "csv")
 
-MAX_REQUESTS = 10
+MAX_REQUESTS = 1
 
 config = AutoConfig(search_path="..")
 REDIS_DB_HOSTNAME = config("REDIS_DB_HOSTANAME", default="redis-db")

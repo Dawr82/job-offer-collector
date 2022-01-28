@@ -78,6 +78,16 @@ def save() -> None:
             print(f"{exc.__class__.__name__}: An error occured during saving to Redis database.")
 
 
+def help_panel() -> None:
+    print("\nUsage: python main.py [OPTION]\n\n")
+    print("Available options: \
+        \n\thelp               get help regarding usage of this program \
+        \n\tscrape             scrape website and output the data to .json file \
+        \n\tsave               save .json data (if exists) to redis database \
+        \n\tscrape-and-save    scrape and then save the data to redis database (combined scrape and save options) \
+        \n")
+
+
 def main() -> None:
     try:
         option = sys.argv[1]
@@ -85,7 +95,9 @@ def main() -> None:
         print(f"{exc.__class__.__name__}: Supply the program with needed command-line arguments!")
         sys.exit()
 
-    if option == "scrape":
+    if option == "help":
+        help_panel()
+    elif option == "scrape":
         scrape()
     elif option == "scrape-and-save":
         scrape()
@@ -93,7 +105,7 @@ def main() -> None:
     elif option == "save":
         save()
     else:
-        print(f"{sys.argv}: invalid command-line argument! Suppored: scrape, scrape-and-save, save")
+        print(f"{sys.argv[1]}: invalid command-line argument! Suppored: scrape, scrape-and-save, save")
 
 
 if __name__ == '__main__':

@@ -9,6 +9,8 @@ sys.path.append("..\..")
 from config import settings
 from config import sns
 
+import utils
+
 
 class BaseJobOfferSpider(scrapy.Spider):
 
@@ -19,6 +21,9 @@ class BaseJobOfferSpider(scrapy.Spider):
     offer_company_selector = "div.company::text"
     offer_salary_selector = "div.salary::text"
     offer_location_selector = "//div[@class='location']/i/following-sibling::text()"
+
+    offer_content_selector = "div.list-container a.posting-list-item::attr(href)"
+
     next_page_selector = "a.next"
     request_class = scrapy.Request
     request_count = 0
@@ -32,18 +37,23 @@ class BaseJobOfferSpider(scrapy.Spider):
 
 
     def parse_single(self, offer):
-        return {}
+        raise NotImplementedError("This function is not implemented")
+
+
+    def parse_offer_content(self, offer_content):
+        raise NotImplementedError("This function is not implemented!")
 
 
     def parse(self, response):
-        offers = response.css(self.offer_container_selector)
-        for offer in offers:
-            yield self.parse_single(offer)
-        self.request_count += 1      
-        next_page = response.css(self.next_page_selector).attrib["href"]
-        if next_page is not None and self.request_count < settings.MAX_REQUESTS:
-            next_page = response.urljoin(next_page)
-            yield self.request_class(next_page, callback=self.parse)
+        offer_content_links = response.css(self.offer_content_selector)
+        for offer_content_link in offer_content_links:
+            yield self.request_class(response.urljoin(offer_content_link.get()), callback=self.parse_offer_content)
+
+        # self.request_count += 1   
+        # next_page = response.css(self.next_page_selector).attrib["href"]
+        # if next_page is not None and self.request_count < settings.MAX_REQUESTS:
+        #     next_page = response.urljoin(next_page)
+        #     yield self.request_class(next_page, callback=self.parse)
 
 
 class BDGJobOfferSpider(BaseJobOfferSpider):
@@ -101,3 +111,67 @@ class NFJJobOfferSpider(BaseJobOfferSpider):
             "salary" : offer_salary,
             "location" : offer_location,
         }
+
+    
+    def parse_offer_content(self, offer_content):
+
+        self.offer_id += 1
+
+        requirements_container = offer_content.css("div [id=posting-requirements]")
+        requirements = self.parse_offer_requirements(requirements_container)
+
+        params_container = offer_content.css("div.row.mb-3")
+        params = self.parse_offer_params(params_container)
+
+        return {
+            "offer_id": self.offer_id,
+            **params,
+            **requirements,
+        }
+    
+    def parse_offer_requirements(self, requirements_container):
+        try:
+            required = requirements_container.css("[class=d-block] h3.mb-0 button::text").getall()
+            required += requirements_container.css("[class=d-block] h3.mb-0 a::text").getall()
+
+            optional = requirements_container.css("[id=posting-nice-to-have] h3.mb-0 button::text").getall()
+            optional += requirements_container.css("[id=posting-nice-to-have] h3.mb-0 a::text").getall()
+        except Exception as exc:
+            print(exc)
+
+        return {
+            "required": required,
+            "optional": optional,
+        }
+
+    def parse_offer_params(self, params_container):
+        try:
+            position = params_container.css("[id=posting-header] h1::text").get()
+            company = params_container.css("[id=postingCompanyUrl]::text").get()
+            category = params_container.css("span.font-weight-semi-bold::text").get()
+            seniority = params_container.css("[id=posting-seniority] span::text").get()
+            salary = params_container.css("div.salary h4::text").get().replace("\xa0", "")
+
+            locations = list()
+            is_remote = params_container.css("[maticon=home]").get()
+            if is_remote is not None:
+                locations.append("Remote")
+
+            try:
+                locations += params_container.css("[popoverplacement=bottom] span::text").get().split(", ")
+            except Exception:
+                pass
+
+            locations = utils.map_polish_chars(locations)
+        except Exception as exc:
+            print(exc)
+   
+        return {
+            "position": position,
+            "category": category,
+            "company": company,
+            "locations": locations,
+            "seniority": seniority,
+            "salary": salary,
+        }
+
