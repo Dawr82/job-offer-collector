@@ -99,6 +99,12 @@ def save_to_mongo(mongo_client: pymongo.MongoClient, collection_name: str, data:
     print(f"Saved {saved_count} documents in collection {collection_name}")
 
 
+def drop_from_redis(redis_client: redis.Redis) -> None:
+    for key in JSON_PATHS.keys():
+        if redis_client.delete(key):
+            print(f"Removed key {key} from redis cache.")
+
+
 def help_panel() -> None:
     print("\nUsage: python main.py [OPTION]\n\n")
     print("Available options: \
@@ -130,10 +136,13 @@ def main() -> None:
         except IndexError as exc:
             print(f"{exc.__class__.__name__}: Specify option for saving: mongo or redis")
         else:
+            redis_client = redis.Redis(host="localhost", port=6379, db=0)
+            mongo_client = pymongo.MongoClient(settings.MONGO_DB_CONNECTION_STRING)
             if save_option == "mongo":
-                save(pymongo.MongoClient(settings.MONGO_DB_CONNECTION_STRING))
+                save(mongo_client)
+                drop_from_redis(redis_client)
             elif save_option == "redis":
-                save(redis.Redis(settings.REDIS_DB_HOSTNAME, settings.REDIS_DB_PORT, 0))
+                save(redis_client)
             else:
                 print("Unsupported option for save command! (choose mongo or redis)")
     else:

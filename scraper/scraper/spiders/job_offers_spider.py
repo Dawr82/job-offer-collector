@@ -33,7 +33,7 @@ class BaseJobOfferSpider(scrapy.Spider):
     def start_requests(self):
         if not self.url:
             raise ValueError("Incomplete url! Define url class variable in your JobOfferSpider class.")
-        yield self.request_class(url=self.url, callback=self.parse)
+        yield self.request_class(url=self.url, callback=self.parse, meta={'proxy':'http://103.92.114.2:80'})
 
 
     def parse_single(self, offer):
@@ -49,11 +49,11 @@ class BaseJobOfferSpider(scrapy.Spider):
         for offer_content_link in offer_content_links:
             yield self.request_class(response.urljoin(offer_content_link.get()), callback=self.parse_offer_content)
 
-        # self.request_count += 1   
-        # next_page = response.css(self.next_page_selector).attrib["href"]
-        # if next_page is not None and self.request_count < settings.MAX_REQUESTS:
-        #     next_page = response.urljoin(next_page)
-        #     yield self.request_class(next_page, callback=self.parse)
+        self.request_count += 1   
+        next_page = response.css(self.next_page_selector).attrib["href"]
+        if next_page is not None and self.request_count < settings.MAX_REQUESTS:
+            next_page = response.urljoin(next_page)
+            yield self.request_class(next_page, callback=self.parse)
 
 
 class BDGJobOfferSpider(BaseJobOfferSpider):
@@ -174,4 +174,3 @@ class NFJJobOfferSpider(BaseJobOfferSpider):
             "seniority": seniority,
             "salary": salary,
         }
-

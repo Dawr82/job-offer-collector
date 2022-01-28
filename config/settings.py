@@ -10,14 +10,14 @@ MAX_REQUESTS = 1
 
 config = AutoConfig(search_path="..")
 
-REDIS_DB_HOSTNAME = config("REDIS_DB_HOSTANAME", default="redis-db")
+REDIS_DB_HOSTNAME = config("REDIS_DB_HOSTNAME", default="redis-db")
 REDIS_DB_PORT = config("REDIS_DB_PORT", default="6379")
 
 API_SERVER_HOSTANAME = config("API_SERVER_HOSTNAME", default="flask-api")
 
 MONGO_DB_HOSTNAME = config("MONGO_DB_HOSTNAME", default="localhost")
-MONGO_DB_USER = config("MONGO_INITDB_ROOT_USERNAME", default="dawid")
-MONGO_DB_PASSWORD = config("MONGO_INITDB_ROOT_PASSWORD", default="dawid123")
+MONGO_DB_USER = config("MONGO_INITDB_ROOT_USERNAME", default="root")
+MONGO_DB_PASSWORD = config("MONGO_INITDB_ROOT_PASSWORD", default="root")
 MONGO_DB_PORT = config("MONGO_DB_PORT", default="27017")
 MONGO_DB_JOB_OFFER_DATABASE = config("MONGO_DB_JOB_OFFER_DATABASE", default="scraper")
 
