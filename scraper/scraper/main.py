@@ -111,7 +111,7 @@ def help_panel() -> None:
         \n\thelp               get help regarding usage of this program \
         \n\tscrape             scrape website and output the data to .json file \
         \n\tsave               save .json data (if exists) to redis database \
-        \n\tscrape-and-save    scrape and then save the data to redis database (combined scrape and save options) \
+        \n\textract            scrape and then save the data to redis database (combined scrape and save options) \
         \n")
 
 
@@ -123,30 +123,32 @@ def main() -> None:
         help_panel()
         sys.exit()
 
+    def save_helper(save_option):
+        redis_client = redis.Redis(host="localhost", port=6379, db=0)
+        mongo_client = pymongo.MongoClient(settings.MONGO_DB_CONNECTION_STRING)
+        if save_option == "mongo":
+            save(mongo_client)
+            drop_from_redis(redis_client)
+        elif save_option == "redis":
+            save(redis_client)
+        else:
+            print("Unsupported option for save command! (choose mongo or redis)")
+
     if option == "help":
         help_panel()
     elif option == "scrape":
         scrape()
-    elif option == "scrape-and-save":
-        scrape()
-        save_to_redis()
-    elif option == "save":
+    elif option in ("extract", "save"):
         try:
             save_option = sys.argv[2]
         except IndexError as exc:
-            print(f"{exc.__class__.__name__}: Specify option for saving: mongo or redis")
+            print(f"Specify option for saving: mongo or redis")
         else:
-            redis_client = redis.Redis(host="localhost", port=6379, db=0)
-            mongo_client = pymongo.MongoClient(settings.MONGO_DB_CONNECTION_STRING)
-            if save_option == "mongo":
-                save(mongo_client)
-                drop_from_redis(redis_client)
-            elif save_option == "redis":
-                save(redis_client)
-            else:
-                print("Unsupported option for save command! (choose mongo or redis)")
+            if option == "extract":
+                scrape()
+            save_helper(save_option)
     else:
-        print(f"{sys.argv[1]}: invalid command-line argument! Suppored: help, scrape, scrape-and-save, save")
+        print(f"{sys.argv[1]}: invalid command-line argument! Suppored: help, scrape, extract, save")
 
 
 if __name__ == '__main__':
