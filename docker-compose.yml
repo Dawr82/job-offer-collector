@@ -23,6 +23,7 @@ services:
       - "5000:5000"
     depends_on:
       - redis
+      - mongo
 
   splash:
     networks:
@@ -43,9 +44,22 @@ services:
     depends_on:
       - flask
 
+  mongo:
+    networks:
+      - main
+    image: mongo
+    container_name: mongo-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - "mongo-db-storage:/data/db"
+    env_file:
+      - mongo-config.env
 
+    
 volumes:
   redis-db-storage:
+  mongo-db-storage:
 
 
 networks:

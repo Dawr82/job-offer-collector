@@ -2,8 +2,10 @@ import os
 import sys
 import json
 import logging
+from typing import Union
 
 import redis
+import pymongo
 from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner, Crawler
 from spiders.job_offers_spider import NFJJobOfferSpider, BDGJobOfferSpider
@@ -62,20 +64,39 @@ def scrape() -> None:
     reactor.run()
 
 
-def save() -> None:
-    redis_client = redis.Redis(host="localhost", port=6379)
-
+def save(db_client: Union[redis.Redis, pymongo.MongoClient]) -> None:
     for website in sns.SCRAPED_URLS:
         try:
             with open(JSON_PATHS[website], "r") as f:
-                redis_client.set(website, json.dumps(json.load(f)))
+                if isinstance(db_client, redis.Redis):
+                    save_to_redis(db_client, website, json.dumps(json.load(f)))
+                elif isinstance(db_client, pymongo.MongoClient):
+                    save_to_mongo(db_client, website, json.load(f))
+                else:
+                    raise TypeError(f"This database client ({db_client.__class__.__name__}) is not supported.")
         except FileNotFoundError as exc:
             print(f"{exc.__class__.__name__}: No data for [{website}] website in {os.path.abspath(settings.DATA_JSON_PATH)}.")
         except KeyError as exc:
             print(f"{exc.__class__.__name__}: This website is currently not supported.")
         except Exception as exc:
             print(exc)
-            print(f"{exc.__class__.__name__}: An error occured during saving to Redis database.")
+            print(f"{exc.__class__.__name__}: An error occured during saving to the database.")
+
+
+def save_to_redis(redis_client: redis.Redis, key: str, value: str) -> None:
+    redis_client.set(key, value)
+
+
+def save_to_mongo(mongo_client: pymongo.MongoClient, collection_name: str, data: list) -> None:
+    db = mongo_client[settings.MONGO_DB_JOB_OFFER_DATABASE]
+    print(f"Saving data to collection: {collection_name}")
+    collection = db[collection_name]
+    saved_count = 0
+    for offer in data:
+        if collection.find_one(offer) is None:
+            collection.insert_one(offer)
+            saved_count += 1
+    print(f"Saved {saved_count} documents in collection {collection_name}")
 
 
 def help_panel() -> None:
@@ -93,6 +114,7 @@ def main() -> None:
         option = sys.argv[1]
     except IndexError as exc:
         print(f"{exc.__class__.__name__}: Supply the program with needed command-line arguments!")
+        help_panel()
         sys.exit()
 
     if option == "help":
@@ -101,11 +123,21 @@ def main() -> None:
         scrape()
     elif option == "scrape-and-save":
         scrape()
-        save()
+        save_to_redis()
     elif option == "save":
-        save()
+        try:
+            save_option = sys.argv[2]
+        except IndexError as exc:
+            print(f"{exc.__class__.__name__}: Specify option for saving: mongo or redis")
+        else:
+            if save_option == "mongo":
+                save(pymongo.MongoClient(settings.MONGO_DB_CONNECTION_STRING))
+            elif save_option == "redis":
+                save(redis.Redis(settings.REDIS_DB_HOSTNAME, settings.REDIS_DB_PORT, 0))
+            else:
+                print("Unsupported option for save command! (choose mongo or redis)")
     else:
-        print(f"{sys.argv[1]}: invalid command-line argument! Suppored: scrape, scrape-and-save, save")
+        print(f"{sys.argv[1]}: invalid command-line argument! Suppored: help, scrape, scrape-and-save, save")
 
 
 if __name__ == '__main__':
