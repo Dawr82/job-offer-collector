@@ -1,12 +1,12 @@
 import json
 import sys
-from collections import namedtuple
+from collections import Counter
 
 from flask import Flask, render_template, abort
-from flask_restful import Api, Resource
+from flask_restful import Api, Resource, request
+from marshmallow import Schema, validate, ValidationError, fields
 import redis
 import pymongo
-import bson
 
 sys.path.append("..")
 
@@ -17,10 +17,26 @@ api = Api(app)
 redis_client = redis.Redis(host="redis-db", port=6379, db=0)
 mongo_client = pymongo.MongoClient("mongodb://root:root@mongo-db:27017/scraper?authSource=admin&retryWrites=true&w=majority")
 
+
 class JobOfferFull(Resource):
 
-    def get(self, source="nfj"):
-        # If the data is not present in redis cache, fetch it from MongoDB and save to redis.   
+    def count(count_by, data):
+        counter = Counter()
+        for offer in data:
+            counter.update(offer.get(count_by))
+        return dict(counter)
+        
+    
+    def filter(filter_by, filter, data):
+        try:
+            filtered = [offer for offer in data if offer['filter_by'] == filter]
+        except KeyError:
+            return {"Exception": "KeyError", "Message": "Key not present"}
+        else:
+            return filtered
+
+
+    def get(self, source="nfj"):  
         data = redis_client.get(source) 
         if data is None:
             collection = mongo_client["scraper"][source]
@@ -28,8 +44,18 @@ class JobOfferFull(Resource):
             for offer in data:
                 offer.pop("_id")
             redis_client.set(source, json.dumps(data, indent=4))
-            return data
-        return json.loads(data)
+        else:
+            data = json.loads(data)
+        if request.args:
+            get_keys = request.args.keys()
+            for key in get_keys:
+                if key != "count":
+                    data = self.filter(key, request.args.get(key), data)
+                    break
+            if "count" in get_keys:
+                data = self.count(get_keys.get('count'), data)
+        return data
+
 
 api.add_resource(JobOfferFull, "/api/offers", "/api/offers/<string:source>")
 

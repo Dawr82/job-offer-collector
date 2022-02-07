@@ -1,16 +1,14 @@
-import sys
 import logging
+import sys
+import json
 
 import scrapy_splash
 import scrapy
-import redis
 
-sys.path.append("..\..")
+sys.path.append('..\..')
 
 from config import settings, sns
 from scraper.scraper import items
-
-import utils
 
 
 class BaseJobOfferSpider(scrapy.Spider):
@@ -76,7 +74,7 @@ class BaseJobOfferSpider(scrapy.Spider):
 
         for content_link in content_links:
             yield self.request_class(response.urljoin(content_link.get()), callback=method)
-
+        
         self.page_count += 1   
         next_page = response.css(self.next_page_selector).attrib["href"]
         if next_page is not None and self.page_count < settings.MAX_PAGES:
@@ -92,12 +90,10 @@ class NFJJobOfferSpider(BaseJobOfferSpider):
     content_link_selector = "div.list-container a.posting-list-item::attr(href)"
     url = sns.SCRAPED_URLS[name]
 
-    offer_id = 0
     request_class = scrapy_splash.SplashRequest
 
 
     def parse_header(self, offer):
-        self.offer_id += 1
         loader = items.NFJOfferHeaderLoader(item=items.JobOfferHeader(), selector=offer)
         try:
             loader.add_css('position', 'h3.posting-title__position::text')
@@ -111,10 +107,8 @@ class NFJJobOfferSpider(BaseJobOfferSpider):
      
 
     def parse_content(self, offer_content):
-        self.offer_id += 1 
         loader = items.NFJOfferContentLoader(item=items.JobOfferContent(), selector=offer_content)
         try:
-            loader.add_value('offer_id', self.offer_id)
             loader.add_css('position', 'div.row.mb-3 [id=posting-header] h1::text')
             loader.add_css('category', 'div.row.mb-3 span.font-weight-semi-bold::text')
             loader.add_css('seniority', 'div.row.mb-3 [id=posting-seniority] span::text')
@@ -126,10 +120,11 @@ class NFJJobOfferSpider(BaseJobOfferSpider):
             loader.add_css('optional', 'div [id=posting-requirements] [id=posting-nice-to-have] h3.mb-0 a::text')
             loader.add_css('remote', 'div.row.mb-3 [maticon=home]')
             loader.add_css('locations', 'div.row.mb-3 [popoverplacement=bottom] span::text')
+            item = loader.load_item()
+            item['offer_id'] = hash(json.dumps(dict(item), sort_keys=True)) % ((sys.maxsize + 1) * 2)
         except Exception as error:
             self.logger.error(f"{type(error).__name__}: {error} URL -> {offer_content.url}")
-
-        return loader.load_item()
+        return item
 
 
 class BDGJobOfferSpider(BaseJobOfferSpider):

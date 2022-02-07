@@ -2,7 +2,6 @@
 #
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-
 from scrapy import signals
 
 # useful for handling different item types with a single interface
@@ -101,9 +100,3 @@ class ScraperDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
-
-
-class OfferProxyMiddleware:
-
-    def process_request(self, request, spider):
-        request.meta['proxy'] = "http://144.202.113.90:8080"

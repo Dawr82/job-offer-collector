@@ -8,6 +8,7 @@ import redis
 import pymongo
 from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner, Crawler
+from scrapy.settings import Settings
 from spiders.job_offers_spider import NFJJobOfferSpider, BDGJobOfferSpider
 
 sys.path.append("..")
@@ -27,9 +28,9 @@ CSV_PATHS = {
 
 
 def get_crawler_settings(feeds_filename: str) -> dict:
+    crawler_settings = Settings()
     try:
-        crawler_settings = {
-                "FEEDS" : {
+        feeds = {
                 JSON_PATHS[feeds_filename]: {
                     "format": "json",
                     "indent": 4,
@@ -39,13 +40,13 @@ def get_crawler_settings(feeds_filename: str) -> dict:
                     "format" : "csv",
                     "fields" : ["title", "company", "salary", "location"],
                     "overwrite": True,
-                }  
-            }    
-        }
+                } 
+            }
+        crawler_settings.set('FEEDS', feeds)
     except KeyError:
         print("feeds_filename not supported")
     else:
-        return crawler_settings
+        return dict(crawler_settings)
 
 
 def start_crawling(runner: CrawlerRunner) -> None:
@@ -60,9 +61,9 @@ def scrape() -> None:
     start_crawling(runner)
     runner.join()
     d = runner.join()
-    d.addBoth(lambda _: reactor.stop())
+    d.addBoth(lambda _: reactor.stop())  
     reactor.run()
-
+    
 
 def save(db_client: Union[redis.Redis, pymongo.MongoClient]) -> None:
     for website in sns.SCRAPED_URLS:
@@ -93,9 +94,7 @@ def save_to_mongo(mongo_client: pymongo.MongoClient, collection_name: str, data:
     collection = db[collection_name]
     saved_count = 0
     for offer in data:
-        if collection.find_one(offer) is None:
-            collection.insert_one(offer)
-            saved_count += 1
+        collection.update({'offer_id' : offer.get('offer_id')}, offer, upsert=True)
     print(f"Saved {saved_count} documents in collection {collection_name}")
 
 
