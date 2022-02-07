@@ -1,6 +1,6 @@
 import json
 import sys
-from collections import Counter
+from collections import Counter, OrderedDict
 
 from flask import Flask, render_template, abort
 from flask_restful import Api, Resource, request
@@ -20,20 +20,34 @@ mongo_client = pymongo.MongoClient("mongodb://root:root@mongo-db:27017/scraper?a
 
 class JobOfferFull(Resource):
 
-    def count(count_by, data):
+    def count(self, count_by, data):
         counter = Counter()
         for offer in data:
-            counter.update(offer.get(count_by))
+            item = offer.get(count_by)
+            if item is not None:
+                if not isinstance(item, list):
+                    counter.update([item])
+                else:
+                    counter.update(item)
+        if not counter:
+            return {"Exception": "ValueError", "Message": "Field not present"}
         return dict(counter)
         
     
-    def filter(filter_by, filter, data):
+    def filter(self, filter_by, filter, data):
         try:
-            filtered = [offer for offer in data if offer['filter_by'] == filter]
+            filtered = [offer for offer in data if offer[filter_by] == filter]
         except KeyError:
             return {"Exception": "KeyError", "Message": "Key not present"}
         else:
             return filtered
+
+    
+    def sort(self, order, data):
+        if order == "asc":
+            return dict(sorted(data.items(), key=lambda item: item[1]))
+        else:
+            return dict(sorted(data.items(), key=lambda item: item[1], reverse=True))
 
 
     def get(self, source="nfj"):  
@@ -50,11 +64,13 @@ class JobOfferFull(Resource):
         if request.args:
             get_keys = request.args.keys()
             for key in get_keys:
-                if key != "count":
-                    data = self.filter(key, request.args.get(key), data)
+                if key not in ('count', 'sort'):
+                    data = self.filter(key, request.args.get(key).lower().capitalize(), data)
                     break
             if "count" in get_keys:
-                data = self.count(get_keys.get('count'), data)
+                data = self.count(request.args.get('count').lower(), data)
+                if "sort" in get_keys:
+                    data = self.sort(request.args.get('sort').lower(), data)      
         return data
 
 

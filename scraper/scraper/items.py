@@ -1,4 +1,5 @@
-from numpy import identity
+from typing import Union
+
 from scrapy import Field, Item
 from scrapy.loader import ItemLoader
 from itemloaders.processors import MapCompose, Compose, TakeFirst, Identity
@@ -41,13 +42,29 @@ CHARS = {
     "\u017b": "z", 
 }
 
+ALLOWED_LOCATIONS = [
+    'Warszawa',
+    'Krakow',
+    'Poznan',
+    'Gdansk',
+    'Gliwice',
+    'Katowice',
+    'Lublin',
+    'Rzeszow',
+    'Wroclaw',
+    'Zielona Gora',
+    'Bydgoszcz',
+    'Torun',
+    'Kielce',
+    'Bialystok'
+]
+
 
 def replace_polish_chars(value: str) -> str:
     for polish, replacement in CHARS.items():
         if polish in value:
             value = value.replace(polish, replacement)
     return value
-
 
 
 def parse_locations(locations: str) -> list[str]:
@@ -63,6 +80,9 @@ def set_remote(value: str) -> bool:
     return True if value is not None else False
 
 
+def filter_location(location: str):
+    return location if location in ALLOWED_LOCATIONS else None
+
 
 class NFJOfferHeaderLoader(ItemLoader):
     company_in = MapCompose(lambda v: v.strip(' @'))
@@ -73,10 +93,12 @@ class NFJOfferHeaderLoader(ItemLoader):
 class NFJOfferContentLoader(ItemLoader):
 
     default_output_processor = TakeFirst()
+    default_input_processor = MapCompose(lambda v: v.strip())
 
     salary_in = MapCompose(lambda v: v.replace("\xa0", ""))
-    locations_in = MapCompose(parse_locations, replace_polish_chars)
+    locations_in = MapCompose(lambda v: v.strip(' +1'), parse_locations, replace_polish_chars, filter_location)
     remote_in = Compose(set_remote)
+    category_in = MapCompose(lambda v: v.split(', '))
 
     locations_out = Identity()
     required_out = Identity()
