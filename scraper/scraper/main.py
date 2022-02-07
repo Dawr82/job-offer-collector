@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import logging
+from datetime import datetime
 from typing import Union
 
 import redis
@@ -94,7 +95,16 @@ def save_to_mongo(mongo_client: pymongo.MongoClient, collection_name: str, data:
     collection = db[collection_name]
     saved_count = 0
     for offer in data:
-        collection.update({'offer_id' : offer.get('offer_id')}, offer, upsert=True)
+        filter = {'offer_id' : offer.get('offer_id')}
+        update = {
+            '$setOnInsert': {
+                'insertionDate': datetime.now()
+            }, 
+            '$set': offer
+        }
+        result = collection.update_one(filter=filter, update=update, upsert=True)
+        if result.upserted_id is not None:
+            saved_count += 1
     print(f"Saved {saved_count} documents in collection {collection_name}")
 
 

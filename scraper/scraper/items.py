@@ -1,6 +1,7 @@
+from numpy import identity
 from scrapy import Field, Item
 from scrapy.loader import ItemLoader
-from itemloaders.processors import MapCompose, Compose
+from itemloaders.processors import MapCompose, Compose, TakeFirst, Identity
 
 
 class JobOfferHeader(Item):
@@ -71,6 +72,13 @@ class NFJOfferHeaderLoader(ItemLoader):
 
 class NFJOfferContentLoader(ItemLoader):
 
+    default_output_processor = TakeFirst()
+
     salary_in = MapCompose(lambda v: v.replace("\xa0", ""))
     locations_in = MapCompose(parse_locations, replace_polish_chars)
     remote_in = Compose(set_remote)
+
+    locations_out = Identity()
+    required_out = Identity()
+    optional_out = Identity()
+    seniority_out = Identity()

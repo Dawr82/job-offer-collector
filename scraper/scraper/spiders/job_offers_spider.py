@@ -1,6 +1,7 @@
 import logging
 import sys
 import json
+import hashlib
 
 import scrapy_splash
 import scrapy
@@ -121,7 +122,7 @@ class NFJJobOfferSpider(BaseJobOfferSpider):
             loader.add_css('remote', 'div.row.mb-3 [maticon=home]')
             loader.add_css('locations', 'div.row.mb-3 [popoverplacement=bottom] span::text')
             item = loader.load_item()
-            item['offer_id'] = hash(json.dumps(dict(item), sort_keys=True)) % ((sys.maxsize + 1) * 2)
+            item['offer_id'] = hashlib.md5(json.dumps(dict(item), sort_keys=True).encode()).hexdigest()
         except Exception as error:
             self.logger.error(f"{type(error).__name__}: {error} URL -> {offer_content.url}")
         return item

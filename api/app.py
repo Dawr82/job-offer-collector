@@ -43,6 +43,7 @@ class JobOfferFull(Resource):
             data = list(collection.find())
             for offer in data:
                 offer.pop("_id")
+                offer.pop("insertionDate")
             redis_client.set(source, json.dumps(data, indent=4))
         else:
             data = json.loads(data)
