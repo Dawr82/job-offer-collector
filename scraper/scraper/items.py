@@ -1,12 +1,76 @@
-# Define here the models for your scraped items
-#
-# See documentation in:
-# https://docs.scrapy.org/en/latest/topics/items.html
-
-import scrapy
+from scrapy import Field, Item
+from scrapy.loader import ItemLoader
+from itemloaders.processors import MapCompose, Compose
 
 
-class ScraperItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+class JobOfferHeader(Item):
+    offer_id = Field()
+    position = Field()
+    company = Field()
+    locations = Field()
+    salary = Field()
+    remote = Field()
+
+
+class JobOfferContent(JobOfferHeader):
+    category = Field()
+    seniority = Field()
+    required = Field()
+    optional = Field()
+    
+
+CHARS = {
+    "\u00f3": "o", 
+    "\u0142": "l",
+    "\u0105": "a",
+    "\u0107": "c",
+    "\u0119": "e",
+    "\u0144": "n",
+    "\u015b": "s",
+    "\u017a": "z",
+    "\u017c": "z",
+    "\u00d3": "O",
+    "\u0141": "L",
+    "\u0104": "A",
+    "\u0106": "C",
+    "\u0118": "E",
+    "\u0143": "N",
+    "\u015a": "s",
+    "\u0179": "z",
+    "\u017b": "z", 
+}
+
+
+def replace_polish_chars(value: str) -> str:
+    for polish, replacement in CHARS.items():
+        if polish in value:
+            value = value.replace(polish, replacement)
+    return value
+
+
+
+def parse_locations(locations: str) -> list[str]:
+    locations = locations.split(", ")
+    try:
+        locations.remove("\u2022")
+    except ValueError:
+        pass
+    return locations
+
+
+def set_remote(value: str) -> bool:
+    return True if value is not None else False
+
+
+
+class NFJOfferHeaderLoader(ItemLoader):
+    company_in = MapCompose(lambda v: v.strip(' @'))
+    salary_in = MapCompose(lambda v: v.replace(u'\xa0', u' '))
+    locations_in = MapCompose(lambda v: v.split(', '))
+
+
+class NFJOfferContentLoader(ItemLoader):
+
+    salary_in = MapCompose(lambda v: v.replace("\xa0", ""))
+    locations_in = MapCompose(parse_locations, replace_polish_chars)
+    remote_in = Compose(set_remote)

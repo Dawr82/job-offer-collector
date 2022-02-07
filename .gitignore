@@ -133,3 +133,4 @@ test_workspace
 data
 config.py
 config/sns.py
+logs

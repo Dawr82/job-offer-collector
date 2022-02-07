@@ -19,7 +19,7 @@ CHARS = {
     "\u017b": "z", 
 }
 
-def map_polish_chars(words: list[str]) -> list[str]:
+def replace_polish_chars(words: list[str]) -> list[str]:
     updated_words = list()
     for word in words:
         for polish, replacement in CHARS.items():
