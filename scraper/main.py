@@ -9,11 +9,11 @@ import redis
 import pymongo
 from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner, Crawler
-from scrapy.settings import Settings
-from spiders.job_offers_spider import NFJJobOfferSpider, BDGJobOfferSpider
 
-sys.path.append("..")
-
+from spiders.job_offers_spider import (
+    NFJJobOfferSpider, 
+    BDGJobOfferSpider
+)
 from config import settings, sns
 
 
@@ -29,9 +29,9 @@ CSV_PATHS = {
 
 
 def get_crawler_settings(feeds_filename: str) -> dict:
-    crawler_settings = Settings()
     try:
-        feeds = {
+        crawler_settings = {
+            "FEEDS" : {
                 JSON_PATHS[feeds_filename]: {
                     "format": "json",
                     "indent": 4,
@@ -41,18 +41,19 @@ def get_crawler_settings(feeds_filename: str) -> dict:
                     "format" : "csv",
                     "fields" : ["title", "company", "salary", "location"],
                     "overwrite": True,
-                } 
+                }
             }
-        crawler_settings.set('FEEDS', feeds)
+        }
     except KeyError:
         print("feeds_filename not supported")
     else:
-        return dict(crawler_settings)
+        return crawler_settings
 
 
 def start_crawling(runner: CrawlerRunner) -> None:
-    crawler_bdg = Crawler(BDGJobOfferSpider, get_crawler_settings("bdg"))
+    print(json.dumps(get_crawler_settings("nfj"), indent=4))
     crawler_nfj = Crawler(NFJJobOfferSpider, get_crawler_settings("nfj"))
+    crawler_bdg = Crawler(BDGJobOfferSpider, get_crawler_settings("bdg"))
     runner.crawl(crawler_bdg)
     runner.crawl(crawler_nfj)
 
@@ -64,7 +65,7 @@ def scrape() -> None:
     d = runner.join()
     d.addBoth(lambda _: reactor.stop())  
     reactor.run()
-    
+
 
 def save(db_client: Union[redis.Redis, pymongo.MongoClient]) -> None:
     for website in sns.SCRAPED_URLS:

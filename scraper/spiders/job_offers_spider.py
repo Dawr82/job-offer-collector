@@ -6,10 +6,10 @@ import hashlib
 import scrapy_splash
 import scrapy
 
-sys.path.append('..\..')
+sys.path.append("..")
 
 from config import settings, sns
-from scraper.scraper import items
+import items
 
 
 class BaseJobOfferSpider(scrapy.Spider):
@@ -34,14 +34,19 @@ class BaseJobOfferSpider(scrapy.Spider):
     @classmethod
     def check(cls):
         if not all([cls.content_link_selector, cls.next_page_selector, cls.url]):
-            raise ValueError(f"{cls.__name__}: class attributes need to be defined in child classes!")
+            raise ValueError(f"{cls.__name__}: \
+            class attributes need to be defined in child classes!")
 
 
     @classmethod
     def set_logging(cls):
         try:
-            formatter = logging.Formatter("[%(asctime)s] %(message)s", settings.CRAWLER_LOG_DATETIME_FORMAT)
-            handler = logging.FileHandler(settings.CRAWLER_LOG_FILE, settings.CRAWLER_LOG_MODE)
+            formatter = logging.Formatter(
+                "[%(asctime)s] %(message)s", 
+                settings.CRAWLER_LOG_DATETIME_FORMAT)
+            handler = logging.FileHandler(
+                settings.CRAWLER_LOG_FILE, 
+                settings.CRAWLER_LOG_MODE)
             handler.setFormatter(formatter)
             handler.setLevel(logging.INFO)
             cls.logger = logging.getLogger("crawler")
@@ -52,7 +57,9 @@ class BaseJobOfferSpider(scrapy.Spider):
     
 
     def start_requests(self):
-        yield self.request_class(url=self.url, callback=self.parse, meta={'proxy': sns.PROXY})
+        yield self.request_class(
+            url=self.url,
+            callback=self.parse)
 
 
     def parse_header(self, offer_header):
@@ -74,7 +81,8 @@ class BaseJobOfferSpider(scrapy.Spider):
             raise ValueError("Unsupported type of parse method")
 
         for content_link in content_links:
-            yield self.request_class(response.urljoin(content_link.get()), callback=method)
+            yield self.request_class(
+                response.urljoin(content_link.get()), callback=method)
         
         self.page_count += 1   
         next_page = response.css(self.next_page_selector).attrib["href"]
@@ -108,7 +116,8 @@ class NFJJobOfferSpider(BaseJobOfferSpider):
      
 
     def parse_content(self, offer_content):
-        loader = items.NFJOfferContentLoader(item=items.JobOfferContent(), selector=offer_content)
+        loader = items.NFJOfferContentLoader(
+            item=items.JobOfferContent(), selector=offer_content)
         try:
             loader.add_css('position', 'div.row.mb-3 [id=posting-header] h1::text')
             loader.add_css('category', 'div.row.mb-3 span.font-weight-semi-bold::text')
@@ -122,7 +131,8 @@ class NFJJobOfferSpider(BaseJobOfferSpider):
             loader.add_css('remote', 'div.row.mb-3 [maticon=home]')
             loader.add_css('locations', 'div.row.mb-3 [popoverplacement=bottom] span::text')
             item = loader.load_item()
-            item['offer_id'] = hashlib.md5(json.dumps(dict(item), sort_keys=True).encode()).hexdigest()
+            item['offer_id'] = hashlib.md5(
+                json.dumps(dict(item), sort_keys=True).encode()).hexdigest()
         except Exception as error:
             self.logger.error(f"{type(error).__name__}: {error} URL -> {offer_content.url}")
         return item

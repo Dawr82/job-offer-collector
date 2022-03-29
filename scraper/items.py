@@ -1,25 +1,12 @@
-from typing import Union
-
 from scrapy import Field, Item
 from scrapy.loader import ItemLoader
-from itemloaders.processors import MapCompose, Compose, TakeFirst, Identity
+from itemloaders.processors import(
+    MapCompose, 
+    Compose, 
+    TakeFirst, 
+    Identity
+)
 
-
-class JobOfferHeader(Item):
-    offer_id = Field()
-    position = Field()
-    company = Field()
-    locations = Field()
-    salary = Field()
-    remote = Field()
-
-
-class JobOfferContent(JobOfferHeader):
-    category = Field()
-    seniority = Field()
-    required = Field()
-    optional = Field()
-    
 
 CHARS = {
     "\u00f3": "o", 
@@ -84,6 +71,22 @@ def filter_location(location: str):
     return location if location in ALLOWED_LOCATIONS else None
 
 
+class JobOfferHeader(Item):
+    offer_id = Field()
+    position = Field()
+    company = Field()
+    locations = Field()
+    salary = Field()
+    remote = Field()
+
+
+class JobOfferContent(JobOfferHeader):
+    category = Field()
+    seniority = Field()
+    required = Field()
+    optional = Field()
+
+
 class NFJOfferHeaderLoader(ItemLoader):
     company_in = MapCompose(lambda v: v.strip(' @'))
     salary_in = MapCompose(lambda v: v.replace(u'\xa0', u' '))
@@ -96,7 +99,9 @@ class NFJOfferContentLoader(ItemLoader):
     default_input_processor = MapCompose(lambda v: v.strip())
 
     salary_in = MapCompose(lambda v: v.replace("\xa0", ""))
-    locations_in = MapCompose(lambda v: v.strip(' +1'), parse_locations, replace_polish_chars, filter_location)
+    locations_in = MapCompose(
+        lambda v: v.strip(' +1'), parse_locations, 
+        replace_polish_chars, filter_location)
     remote_in = Compose(set_remote)
     category_in = MapCompose(lambda v: v.split(', '))
 

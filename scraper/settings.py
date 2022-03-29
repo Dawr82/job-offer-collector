@@ -17,8 +17,6 @@ NEWSPIDER_MODULE = 'scraper.spiders'
 SPLASH_URL = 'http://localhost:8050'
 
 DOWNLOADER_MIDDLEWARES = {
-    'scraper.middlewares.OfferProxyMiddleware': 350,
-    'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 400,
     'scrapy_splash.SplashCookiesMiddleware': 723,
     'scrapy_splash.SplashMiddleware': 725,
     'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
@@ -77,9 +75,9 @@ SPIDER_MIDDLEWARES = {
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-ITEM_PIPELINES = {
-   'scraper.pipelines.HashPipeline': 300,
-}
+#ITEM_PIPELINES = {
+#    'scraper.pipelines.ScraperPipeline': 300,
+#}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html

@@ -10,7 +10,7 @@ DATA_CSV_PATH = os.path.join(DATA_DIRECTORY, "csv")
 
 
 # max pages to process (if website lists offers using pagination)
-MAX_PAGES = 10
+MAX_PAGES = 1
 
 
 # Redis connection
