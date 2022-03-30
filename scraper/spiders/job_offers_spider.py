@@ -59,7 +59,9 @@ class BaseJobOfferSpider(scrapy.Spider):
     def start_requests(self):
         yield self.request_class(
             url=self.url,
-            callback=self.parse)
+            callback=self.parse,
+            meta={'proxy': sns.PROXY},
+            )
 
 
     def parse_header(self, offer_header):
@@ -84,9 +86,10 @@ class BaseJobOfferSpider(scrapy.Spider):
             yield self.request_class(
                 response.urljoin(content_link.get()), callback=method)
         
-        self.page_count += 1   
+        self.page_count += 1
         next_page = response.css(self.next_page_selector).attrib["href"]
-        if next_page is not None and self.page_count < settings.MAX_PAGES:
+    
+        if next_page is not None and (self.page_count < settings.MAX_PAGES):
             next_page = response.urljoin(next_page)
             yield self.request_class(next_page, callback=self.parse)
 
@@ -100,7 +103,6 @@ class NFJJobOfferSpider(BaseJobOfferSpider):
     url = sns.SCRAPED_URLS[name]
 
     request_class = scrapy_splash.SplashRequest
-
 
     def parse_header(self, offer):
         loader = items.NFJOfferHeaderLoader(item=items.JobOfferHeader(), selector=offer)
@@ -138,9 +140,9 @@ class NFJJobOfferSpider(BaseJobOfferSpider):
         return item
 
 
+# Possibly another spider that scrapes another website.
 class BDGJobOfferSpider(BaseJobOfferSpider):
     name = "bdg"
-
     next_page_selector = "a[aria-label=Next]"
     content_link_selector = "div.list-container a.posting-list-item::attr(href)"
     url = sns.SCRAPED_URLS[name]

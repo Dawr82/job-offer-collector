@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import logging
+from pathlib import Path
 from datetime import datetime
 from typing import Union
 
@@ -18,13 +19,13 @@ from config import settings, sns
 
 
 JSON_PATHS = {
-    "bdg" : os.path.join(settings.DATA_JSON_PATH, "bdg.json"),
-    "nfj" : os.path.join(settings.DATA_JSON_PATH, "nfj.json"),
+    "bdg" : Path(settings.DATA_JSON_PATH).joinpath("bdg.json"),
+    "nfj" : Path(settings.DATA_JSON_PATH).joinpath("nfj.json"),
 }
 
 CSV_PATHS = {
-    "bdg" : os.path.join(settings.DATA_CSV_PATH, "bdg.csv"),
-    "nfj" : os.path.join(settings.DATA_CSV_PATH, "nfj.csv"),
+    "bdg" : Path(settings.DATA_CSV_PATH).joinpath("bdg.csv"),
+    "nfj" : Path(settings.DATA_CSV_PATH).joinpath("nfj.csv"),
 }
 
 
@@ -37,7 +38,7 @@ def get_crawler_settings(feeds_filename: str) -> dict:
                     "indent": 4,
                     "overwrite": True,
                 },
-                CSV_PATHS[feeds_filename] : {
+                CSV_PATHS[feeds_filename]: {
                     "format" : "csv",
                     "fields" : ["title", "company", "salary", "location"],
                     "overwrite": True,
@@ -51,7 +52,6 @@ def get_crawler_settings(feeds_filename: str) -> dict:
 
 
 def start_crawling(runner: CrawlerRunner) -> None:
-    print(json.dumps(get_crawler_settings("nfj"), indent=4))
     crawler_nfj = Crawler(NFJJobOfferSpider, get_crawler_settings("nfj"))
     crawler_bdg = Crawler(BDGJobOfferSpider, get_crawler_settings("bdg"))
     runner.crawl(crawler_bdg)
