@@ -102,7 +102,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+#.env
 .venv
 env/
 venv/
@@ -131,8 +131,6 @@ dmypy.json
 # This project
 test_workspace
 data
-config.py
 scraper/config/sns.py
 log
-TODO.txt
 NOTES.txt
