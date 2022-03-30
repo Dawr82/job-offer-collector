@@ -24,6 +24,8 @@ services:
     depends_on:
       - redis
       - mongo
+    env_file:
+    - ${API_CONFIG_PATH}  # Path to API Server config data (.env)
 
   splash:
     networks:
@@ -54,7 +56,7 @@ services:
     volumes:
       - "mongo-db-storage:/data/db"
     env_file:
-      - mongo-config.env
+      - ${MONGO_CONFIG}   # Path to MongoDB config data (.env file)
 
     
 volumes:

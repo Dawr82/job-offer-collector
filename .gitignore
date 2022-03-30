@@ -135,3 +135,6 @@ config.py
 scraper/config/sns.py
 log
 TODO.txt
+addons
+api_config
+NOTES.txt

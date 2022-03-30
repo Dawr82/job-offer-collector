@@ -29,7 +29,7 @@ CSV_PATHS = {
 }
 
 
-def get_crawler_settings(feeds_filename: str) -> dict:
+def get_crawler_settings(feeds_filename):
     try:
         crawler_settings = {
             "FEEDS" : {
@@ -51,14 +51,14 @@ def get_crawler_settings(feeds_filename: str) -> dict:
         return crawler_settings
 
 
-def start_crawling(runner: CrawlerRunner) -> None:
+def start_crawling(runner):
     crawler_nfj = Crawler(NFJJobOfferSpider, get_crawler_settings("nfj"))
     crawler_bdg = Crawler(BDGJobOfferSpider, get_crawler_settings("bdg"))
     runner.crawl(crawler_bdg)
     runner.crawl(crawler_nfj)
 
 
-def scrape() -> None:
+def scrape():
     runner = CrawlerRunner()
     start_crawling(runner)
     runner.join()
@@ -67,7 +67,7 @@ def scrape() -> None:
     reactor.run()
 
 
-def save(db_client: Union[redis.Redis, pymongo.MongoClient]) -> None:
+def save(db_client):
     for website in sns.SCRAPED_URLS:
         try:
             with open(JSON_PATHS[website], "r") as f:
@@ -82,15 +82,14 @@ def save(db_client: Union[redis.Redis, pymongo.MongoClient]) -> None:
         except KeyError as exc:
             print(f"{exc.__class__.__name__}: This website is currently not supported.")
         except Exception as exc:
-            print(exc)
             print(f"{exc.__class__.__name__}: An error occured during saving to the database.")
 
 
-def save_to_redis(redis_client: redis.Redis, key: str, value: str) -> None:
+def save_to_redis(redis_client, key, value):
     redis_client.set(key, value)
 
 
-def save_to_mongo(mongo_client: pymongo.MongoClient, collection_name: str, data: list) -> None:
+def save_to_mongo(mongo_client, collection_name, data):
     db = mongo_client[settings.MONGO_DB_JOB_OFFER_DATABASE]
     print(f"Saving data to collection: {collection_name}")
     collection = db[collection_name]
@@ -109,23 +108,25 @@ def save_to_mongo(mongo_client: pymongo.MongoClient, collection_name: str, data:
     print(f"Saved {saved_count} documents in collection {collection_name}")
 
 
-def drop_from_redis(redis_client: redis.Redis) -> None:
+def drop_from_redis(redis_client):
     for key in JSON_PATHS.keys():
         if redis_client.delete(key):
             print(f"Removed key {key} from redis cache.")
+        else:
+            print(f"Couldn't remove key {key} from redis cache.")
 
 
-def help_panel() -> None:
+def help_panel():
     print("\nUsage: python main.py [OPTION]\n\n")
     print("Available options: \
         \n\thelp               get help regarding usage of this program \
         \n\tscrape             scrape website and output the data to .json file \
-        \n\tsave               save .json data (if exists) to redis database \
-        \n\textract            scrape and then save the data to redis database (combined scrape and save options) \
+        \n\tsave               save .json data (if exists) to redis/mongo database \
+        \n\textract            scrape and then save the data to redis/mongo database (combined scrape and save options) \
         \n")
 
 
-def main() -> None:
+def main():
     try:
         option = sys.argv[1]
     except IndexError as exc:
@@ -158,7 +159,7 @@ def main() -> None:
                 scrape()
             save_helper(save_option)
     else:
-        print(f"{sys.argv[1]}: invalid command-line argument! Suppored: help, scrape, extract, save")
+        print(f"{sys.argv[1]}: invalid command-line argument! Supported: help, scrape, extract, save")
 
 
 if __name__ == '__main__':

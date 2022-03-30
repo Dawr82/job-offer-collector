@@ -1,21 +1,35 @@
 import json
-import sys
-from collections import Counter, OrderedDict
+import os
+from collections import Counter
 
-from flask import Flask, render_template, abort
+from flask import Flask
 from flask_restful import Api, Resource, request
-from marshmallow import Schema, validate, ValidationError, fields
 import redis
 import pymongo
-
-sys.path.append("..")
-
 
 app = Flask(__name__)
 api = Api(app)
 
-redis_client = redis.Redis(host="redis-db", port=6379, db=0)
-mongo_client = pymongo.MongoClient("mongodb://root:root@mongo-db:27017/scraper?authSource=admin&retryWrites=true&w=majority")
+REDIS_DB_HOSTNAME = os.getenv("REDIS_DB_HOSTNAME", default="redis")
+REDIS_DB_PORT = int(os.getenv("REDIS_DB_PORT", default=6379))
+REDIS_DB_DATABASE = os.getenv("REDIS_DB_DATABASE", default=0)
+
+MONGO_DB_HOSTNAME = os.getenv("MONGO_DB_HOSTNAME", default="localhost")
+MONGO_DB_USER = os.getenv("MONGO_DB_USER", default="root")
+MONGO_DB_PASSWORD = os.getenv("MONGO_DB_PASSWORD", default="root")
+MONGO_DB_PORT = os.getenv("MONGO_DB_PORT", default=27017)
+MONGO_DB_JOB_OFFER_DATABASE = os.getenv("MONGO_DB_JOB_OFFER_DATABASE", default="scraper")
+
+redis_client = redis.Redis(
+    host=REDIS_DB_HOSTNAME, 
+    port=REDIS_DB_PORT, 
+    db=REDIS_DB_DATABASE)
+
+mongo_conn_string = f"mongodb://{MONGO_DB_USER}:{MONGO_DB_PASSWORD}\
+@{MONGO_DB_HOSTNAME}:{MONGO_DB_PORT}/{MONGO_DB_JOB_OFFER_DATABASE}\
+?authSource=admin&retryWrites=true&w=majority"
+
+mongo_client = pymongo.MongoClient(mongo_conn_string)
 
 
 class JobOfferFull(Resource):
@@ -79,23 +93,20 @@ api.add_resource(JobOfferFull, "/api/offers", "/api/offers/<string:source>")
 class HTTPStatusCode:
     BAD_REQUEST = 400
     NOT_FOUND = 404
-    SUCCESS = 200
-
 
 @app.errorhandler(HTTPStatusCode.BAD_REQUEST)
 def bad_request_error_handler(error):
-    return render_template("error_page.html", error=error, title="400 Bad Request"), HTTPStatusCode.BAD_REQUEST
-
+    return {
+        "statusCode": 400,
+        "description": "Bad Request"
+    }
 
 @app.errorhandler(HTTPStatusCode.NOT_FOUND)
 def not_found_error_handler(error):
-    return render_template("error_page.html", error=error, title="404 Not found"), HTTPStatusCode.NOT_FOUND
-
-
-@app.route("/")
-def homepage():
-    return "<h1>Welcome to my website</h1>"
-
+    return {
+        "statusCode": 404,
+        "description": "Not Found"
+    }
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)
