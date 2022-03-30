@@ -1,10 +1,8 @@
-FROM python:3.9-alpine3.14
+FROM python:3.8.3
 
 WORKDIR ./app
 
-COPY ./requirements.txt ./requirements.txt
-
-RUN pip3 install -r ./requirements.txt
+RUN pip3 install streamlit && pip3 install pandas
 
 COPY . .
 
