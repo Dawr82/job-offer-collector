@@ -1,13 +1,16 @@
 import sys
+import os
 
 import streamlit as st
 import requests
 import pandas as pd
 
-# Get the data from REST API (or from redis directly?)
-def get_data_from_api(provider):
+API_SERVER = os.getenv("API_SERVER", default="flask-api")
+API_SERVER_PORT = int(os.getenv("API_SERVER_PORT", default=5000))
+
+def get_all_data(provider):
     try:
-        r = requests.get(f"http://localhost:5000/api/offers/{provider}")
+        r = requests.get(f"http://{API_SERVER}:{API_SERVER_PORT}/api/offers/{provider}")
     except Exception as exc:
         print(f"{exc.__class__.__name__}: {exc}")
         print("Quitting")
@@ -26,8 +29,8 @@ def get_data_from_api(provider):
     return data
 
 
-data_nfj = get_data_from_api("nfj")
-data_bdg = get_data_from_api("bdg")
+data_nfj = get_all_data("nfj")
+data_bdg = get_all_data("bdg")
 
 
 if not all([data_nfj, data_bdg]):
