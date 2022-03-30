@@ -52,7 +52,7 @@ services:
   mongo:
     networks:
       - main
-    image: mongo
+    image: mongo:4.4.6
     container_name: mongo-db
     ports:
       - "27017:27017"
