@@ -2,12 +2,14 @@ FROM python:3.8.3
 
 WORKDIR ./app
 
-RUN pip3 install streamlit && pip3 install pandas
+COPY ./requirements.txt ./requirements.txt
+
+RUN pip3 install -r ./requirements.txt
 
 COPY . .
 
-EXPOSE 9000
+EXPOSE 8501
 
 ENTRYPOINT ["streamlit", "run"]
 
-CMD ["charts.py", "--server.port", "9000"]
+CMD ["charts.py", "--server.port", "8501"]

@@ -42,7 +42,7 @@ services:
     image: streamlit-frontend
     container_name: streamlit-frontend
     ports:
-      - "9000:9000"
+      - "8501:8501"
     depends_on:
       - flask
     environment:
