@@ -1,15 +1,10 @@
 from scrapy import Field, Item
 from scrapy.loader import ItemLoader
-from itemloaders.processors import(
-    MapCompose, 
-    Compose, 
-    TakeFirst, 
-    Identity
-)
+from itemloaders.processors import MapCompose, Compose, TakeFirst, Identity
 
 
 CHARS = {
-    "\u00f3": "o", 
+    "\u00f3": "o",
     "\u0142": "l",
     "\u0105": "a",
     "\u0107": "c",
@@ -26,24 +21,24 @@ CHARS = {
     "\u0143": "N",
     "\u015a": "s",
     "\u0179": "z",
-    "\u017b": "z", 
+    "\u017b": "z",
 }
 
 ALLOWED_LOCATIONS = [
-    'Warszawa',
-    'Krakow',
-    'Poznan',
-    'Gdansk',
-    'Gliwice',
-    'Katowice',
-    'Lublin',
-    'Rzeszow',
-    'Wroclaw',
-    'Zielona Gora',
-    'Bydgoszcz',
-    'Torun',
-    'Kielce',
-    'Bialystok'
+    "Warszawa",
+    "Krakow",
+    "Poznan",
+    "Gdansk",
+    "Gliwice",
+    "Katowice",
+    "Lublin",
+    "Rzeszow",
+    "Wroclaw",
+    "Zielona Gora",
+    "Bydgoszcz",
+    "Torun",
+    "Kielce",
+    "Bialystok",
 ]
 
 
@@ -88,9 +83,9 @@ class JobOfferContent(JobOfferHeader):
 
 
 class NFJOfferHeaderLoader(ItemLoader):
-    company_in = MapCompose(lambda v: v.strip(' @'))
-    salary_in = MapCompose(lambda v: v.replace(u'\xa0', u' '))
-    locations_in = MapCompose(lambda v: v.split(', '))
+    company_in = MapCompose(lambda v: v.strip(" @"))
+    salary_in = MapCompose(lambda v: v.replace("\xa0", " "))
+    locations_in = MapCompose(lambda v: v.split(", "))
 
 
 class NFJOfferContentLoader(ItemLoader):
@@ -100,11 +95,11 @@ class NFJOfferContentLoader(ItemLoader):
 
     salary_in = MapCompose(lambda v: v.replace("\xa0", ""))
     locations_in = MapCompose(
-        lambda v: v.strip(' +1'), parse_locations, 
-        replace_polish_chars, filter_location)
+        lambda v: v.strip(" +1"), parse_locations, replace_polish_chars, filter_location
+    )
     remote_in = Compose(set_remote)
-    category_in = MapCompose(lambda v: v.split(', '))
-    seniority_in = Compose(lambda v: v[0].strip().split(', '))
+    category_in = MapCompose(lambda v: v.split(", "))
+    seniority_in = Compose(lambda v: v[0].strip().split(", "))
 
     locations_out = Identity()
     required_out = Identity()

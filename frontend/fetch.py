@@ -24,14 +24,22 @@ def get_data_req(endpoint):
                 data = r.json()
             except Exception as exc:
                 print(f"{exc.__class__.__name__}: {exc}")
-            else:        
+            else:
                 return data
 
 
 def prepare(data):
     data = pd.DataFrame(data)
     data = data.rename(columns={"salary": "salary (PLN)"})
-    data["seniority"] = data["seniority"].astype(str).apply(lambda x: x.rstrip("]").lstrip("[").replace(",", ", ").replace("'",""))
+    data["seniority"] = (
+        data["seniority"]
+        .astype(str)
+        .apply(lambda x: x.rstrip("]").lstrip("[").replace(",", ", ").replace("'", ""))
+    )
     data = data.fillna({"locations": "Remote"})
-    data["locations"] = data["locations"].astype(str).apply(lambda x: x.rstrip("]").lstrip("[").replace(",", ", ").replace("'",""))     
+    data["locations"] = (
+        data["locations"]
+        .astype(str)
+        .apply(lambda x: x.rstrip("]").lstrip("[").replace(",", ", ").replace("'", ""))
+    )
     return data

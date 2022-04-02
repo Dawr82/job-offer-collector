@@ -4,7 +4,7 @@ from pathlib import Path
 
 from decouple import AutoConfig
 
-# CONFIG_PATH should be file system location 
+# CONFIG_PATH should be file system location
 # that contains configuration files (either .env or .ini)
 
 # If you don't specify all needed variables there
@@ -47,6 +47,8 @@ MONGO_DB_JOB_OFFER_DATABASE = config("MONGO_DB_JOB_OFFER_DATABASE", default="scr
 MONGO_DB_CONNECTION_STRING = f"mongodb://{MONGO_DB_USER}:{MONGO_DB_PASSWORD}@{MONGO_DB_HOSTNAME}:{MONGO_DB_PORT}/{MONGO_DB_JOB_OFFER_DATABASE}?authSource=admin&retryWrites=true&w=majority"
 
 # Log file location can't be adjusted currently
-CRAWLER_LOG_FILE = config("CRAWLER_LOG_FILE", default=Path().parent.parent.joinpath("log/crawler_logs.log"))
+CRAWLER_LOG_FILE = config(
+    "CRAWLER_LOG_FILE", default=Path().parent.parent.joinpath("log/crawler_logs.log")
+)
 CRAWLER_LOG_MODE = "a+"
 CRAWLER_LOG_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"

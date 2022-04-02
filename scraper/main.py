@@ -11,38 +11,35 @@ import pymongo
 from twisted.internet import reactor
 from scrapy.crawler import CrawlerRunner, Crawler
 
-from spiders.job_offers_spider import (
-    NFJJobOfferSpider, 
-    BDGJobOfferSpider
-)
+from spiders.job_offers_spider import NFJJobOfferSpider, BDGJobOfferSpider
 from config import settings, sns
 
 
 JSON_PATHS = {
-    "bdg" : Path(settings.DATA_JSON_PATH).joinpath("bdg.json"),
-    "nfj" : Path(settings.DATA_JSON_PATH).joinpath("nfj.json"),
+    "bdg": Path(settings.DATA_JSON_PATH).joinpath("bdg.json"),
+    "nfj": Path(settings.DATA_JSON_PATH).joinpath("nfj.json"),
 }
 
 CSV_PATHS = {
-    "bdg" : Path(settings.DATA_CSV_PATH).joinpath("bdg.csv"),
-    "nfj" : Path(settings.DATA_CSV_PATH).joinpath("nfj.csv"),
+    "bdg": Path(settings.DATA_CSV_PATH).joinpath("bdg.csv"),
+    "nfj": Path(settings.DATA_CSV_PATH).joinpath("nfj.csv"),
 }
 
 
 def get_crawler_settings(feeds_filename):
     try:
         crawler_settings = {
-            "FEEDS" : {
+            "FEEDS": {
                 JSON_PATHS[feeds_filename]: {
                     "format": "json",
                     "indent": 4,
                     "overwrite": True,
                 },
                 CSV_PATHS[feeds_filename]: {
-                    "format" : "csv",
-                    "fields" : ["title", "company", "salary", "location"],
+                    "format": "csv",
+                    "fields": ["title", "company", "salary", "location"],
                     "overwrite": True,
-                }
+                },
             }
         }
     except KeyError:
@@ -63,7 +60,7 @@ def scrape():
     start_crawling(runner)
     runner.join()
     d = runner.join()
-    d.addBoth(lambda _: reactor.stop())  
+    d.addBoth(lambda _: reactor.stop())
     reactor.run()
 
 
@@ -76,13 +73,19 @@ def save(db_client):
                 elif isinstance(db_client, pymongo.MongoClient):
                     save_to_mongo(db_client, website, json.load(f))
                 else:
-                    raise TypeError(f"This database client ({db_client.__class__.__name__}) is not supported.")
+                    raise TypeError(
+                        f"This database client ({db_client.__class__.__name__}) is not supported."
+                    )
         except FileNotFoundError as exc:
-            print(f"{exc.__class__.__name__}: No data for [{website}] website in {os.path.abspath(settings.DATA_JSON_PATH)}.")
+            print(
+                f"{exc.__class__.__name__}: No data for [{website}] website in {os.path.abspath(settings.DATA_JSON_PATH)}."
+            )
         except KeyError as exc:
             print(f"{exc.__class__.__name__}: This website is currently not supported.")
         except Exception as exc:
-            print(f"{exc.__class__.__name__}: An error occured during saving to the database.")
+            print(
+                f"{exc.__class__.__name__}: An error occured during saving to the database."
+            )
 
 
 def save_to_redis(redis_client, key, value):
@@ -95,13 +98,8 @@ def save_to_mongo(mongo_client, collection_name, data):
     collection = db[collection_name]
     saved_count = 0
     for offer in data:
-        filter = {'offer_id' : offer.get('offer_id')}
-        update = {
-            '$setOnInsert': {
-                'insertionDate': datetime.now()
-            }, 
-            '$set': offer
-        }
+        filter = {"offer_id": offer.get("offer_id")}
+        update = {"$setOnInsert": {"insertionDate": datetime.now()}, "$set": offer}
         result = collection.update_one(filter=filter, update=update, upsert=True)
         if result.upserted_id is not None:
             saved_count += 1
@@ -118,19 +116,23 @@ def drop_from_redis(redis_client):
 
 def help_panel():
     print("\nUsage: python main.py [OPTION]\n\n")
-    print("Available options: \
+    print(
+        "Available options: \
         \n\thelp               get help regarding usage of this program \
         \n\tscrape             scrape website and output the data to .json file \
         \n\tsave               save .json data (if exists) to redis/mongo database \
         \n\textract            scrape and then save the data to redis/mongo database (combined scrape and save options) \
-        \n")
+        \n"
+    )
 
 
 def main():
     try:
         option = sys.argv[1]
     except IndexError as exc:
-        print(f"{exc.__class__.__name__}: Supply the program with needed command-line arguments!")
+        print(
+            f"{exc.__class__.__name__}: Supply the program with needed command-line arguments!"
+        )
         help_panel()
         sys.exit()
 
@@ -159,9 +161,11 @@ def main():
                 scrape()
             save_helper(save_option)
     else:
-        print(f"{sys.argv[1]}: invalid command-line argument! Supported: help, scrape, extract, save")
+        print(
+            f"{sys.argv[1]}: invalid command-line argument! Supported: help, scrape, extract, save"
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.getLogger("scrapy").setLevel(logging.ERROR)
     main()

@@ -1,4 +1,3 @@
-
 SOFT_SKILLS = [
     "English",
     "Polish",
@@ -21,7 +20,7 @@ def get_unique_locations(data):
             unique_locations.update(offer["locations"])
     unique_locations.add("Remote")
     return list(unique_locations)
-    
+
 
 def get_unique_seniority(data):
     unique_seniority = set()
