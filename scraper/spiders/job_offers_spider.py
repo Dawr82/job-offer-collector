@@ -11,7 +11,6 @@ sys.path.append("..")
 from config import settings, sns
 import items
 
-
 class BaseJobOfferSpider(scrapy.Spider):
 
     """Abstract class for job offer spiders."""

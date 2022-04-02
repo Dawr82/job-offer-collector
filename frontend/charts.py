@@ -1,95 +1,141 @@
-import sys
+from collections import Counter
 import os
 
 import streamlit as st
-import requests
-import pandas as pd
+from streamlit_option_menu import option_menu
+import matplotlib.pyplot as plt
 
-API_SERVER = os.getenv("API_SERVER", default="flask-api")
-API_SERVER_PORT = int(os.getenv("API_SERVER_PORT", default=5000))
+import fetch
+import parse
 
-def get_all_data(provider):
-    try:
-        r = requests.get(f"http://{API_SERVER}:{API_SERVER_PORT}/api/offers/{provider}")
-    except Exception as exc:
-        print(f"{exc.__class__.__name__}: {exc}")
-        print("Quitting")
-        sys.exit(1)
 
-    if r.status_code != 200:
-        print(f"Status code {r.status_code}")
-        sys.exit(2)
+class ContentPrinter:
 
-    try:
-        data = r.json()
-    except Exception as exc:
-        print(exc)
-        sys.exit(3)
+    """Responsible for displaying content part of the website."""
+
+    def __init__(self, data_raw):
+        self.data_raw = data_raw
+
     
-    return data
+    def content(self, choice):
+        data = fetch.prepare(self.data_raw)
+        if choice == "About":
+            self.about()
+        elif choice == "Job offers":
+            self.offers(data)
+        elif choice == "Summary":
+            self.summary(data)
 
 
-data_nfj = get_all_data("nfj")
-data_bdg = get_all_data("bdg")
+    def about(self):
+        st.title("About this webiste")
+        st.write("""
+        Here you can find some information regarding IT job offers in Poland.\n
+        Navigate through the website using sidebar options.\n  
+        Feel free to contact me on dskorupa05@gmail.com, if you wish.
+        """)
+
+    
+    def offers(self, data):
+        data_cl = data[["position", "category", "salary (PLN)", "seniority", "locations"]]
+        unique_locations = parse.get_unique_locations(self.data_raw)
+        unique_seniority = parse.get_unique_seniority(self.data_raw)
+        st.title("IT job offers in Poland")
+        selected_cat = st.multiselect(
+            "Select categories",
+            data["category"].unique())
+        selected_loc = st.multiselect(
+            "Select locations",
+            unique_locations)
+        selected_sen = st.radio(
+            "Select seniority level",
+            unique_seniority) 
+        if selected_cat:
+            data_cl = data_cl[data_cl.category.isin(selected_cat)]
+        if selected_loc:
+            data_cl = data_cl.loc[data_cl["locations"].str.contains("|".join(selected_loc))]
+        if selected_sen:
+            if selected_sen != "All":
+                data_cl = data_cl.loc[data_cl["seniority"].str.contains("|".join(selected_sen.split(",")))]
+        st.caption(f"Job offers in total: {data_cl.shape[0]}")
+        st.dataframe(data_cl, height=600)
 
 
-if not all([data_nfj, data_bdg]):
-    print("Problems with API. Quitting...")
-    sys.exit(3)
+    def summary(self, data):
+        st.title("Job offer insights")
+        plt.style.use('ggplot')
+        self.__summary_draw_metrics(data)
+        self.__summary_draw_tech()
+        self.__summary_draw_seniority()
 
-for offer in data_bdg:
-    offer['location'] = offer['location'][0]
+    
+    def __summary_draw_metrics(self, data):
+        category_counts = iter(fetch.get_data_req(fetch.API_SERVER_URL_TEMPLATE.format(count_by="category", sort_order="desc")))
+        most_common_1 = next(category_counts)
+        most_common_2 = next(category_counts)
+        most_common_3 = next(category_counts)
 
-df_data_nfj = pd.DataFrame(data_nfj)
-df_data_bdg = pd.DataFrame(data_bdg)
+        remote_prc = round((data["locations"].value_counts()["Remote"] / data.index.size) * 100, 2)
+        english_prc = round((fetch.get_data_req(fetch.API_SERVER_URL_TEMPLATE.format(count_by="required", sort_order="desc"))["English"] / data.index.size) * 100, 2)
 
-df_data_nfj.set_index('offer_id', inplace=True)
-df_data_bdg.set_index('offer_id', inplace=True)
-
-data_nfj_bar_plot_locations = df_data_nfj['location'].value_counts(dropna=True).drop(['Zdalna', '$+'])
-data_bdg_bar_plot_locations = df_data_bdg['location'].value_counts(dropna=True).drop('Remote')
-
-
-def render_table_chart():
-    table, chart = st.columns(2)
-    selected = table.selectbox("Source", ("Bulldogjobs", "Nofluffjobs"), help="Select source you want data from")
-
-    def render_helper(df_data, df_data_bar_locations):
-        table.dataframe(df_data, height=700, width=1600)
-        chart.header("Job offers according to city")
-        chart.bar_chart(df_data_bar_locations)
-
-    if selected == 'Bulldogjobs':
-        render_helper(df_data_bdg, data_bdg_bar_plot_locations)
-    elif selected == 'Nofluffjobs':
-        render_helper(df_data_nfj, data_nfj_bar_plot_locations)
+        cols = st.columns(3)
+        with cols[0]:
+            st.metric("1st most wanted category", most_common_1)
+            st.metric("Entirely remote", str(remote_prc) + "%")
+        with cols[1]:
+            st.metric("2nd most wanted category", most_common_2)
+            st.metric("English required", str(english_prc) + "%")
+        with cols[2]:
+            st.metric("3rd most wanted category", most_common_3)
 
 
-st.set_page_config(layout="wide")
-st.header("IT Job offers in Poland (as of 22.01.2022)")
-render_table_chart()
+    def __summary_draw_tech(self):
+        tech_counts = fetch.get_data_req(fetch.API_SERVER_URL_TEMPLATE.format(count_by="required", sort_order="desc"))
+        most_common_tech = {}
+        for key, val in tech_counts.items():
+            if key not in parse.SOFT_SKILLS:
+                most_common_tech[key] = val
+            if len(most_common_tech) > 10:
+                break
+        fig, ax = plt.subplots()
+        ax.barh(list(reversed(list(most_common_tech.keys()))), list(reversed(most_common_tech.values())))
+        st.subheader("10 Most demanded technologies")
+        st.write("The below bar chart presents 10 most looked for technologies.")
+        st.pyplot(fig) 
 
 
-# ###
-# import matplotlib.pyplot as plt
+    def __summary_draw_seniority(self):
+        seniority_counts = fetch.get_data_req(fetch.API_SERVER_URL_TEMPLATE.format(count_by="seniority", sort_order="desc"))    
+        explode = (0, 0, 0.15, 0, 0)
+        fig, ax = plt.subplots()
+        ax.pie(
+            seniority_counts.values(), 
+            labels=seniority_counts.keys(), 
+            explode=explode,
+            autopct='%1.1f%%', 
+            startangle=260, 
+            shadow=True)
 
-# def wrap_axes(ax, fig):
-
-#     """Put axes (object created by pandas plotting API) inside matplotlib figure."""
-
-#     ax.figure = fig
-#     fig.axes.append(ax)
-#     fig.add_axes(ax)
-
-#     temp_ax = fig.add_subplot(111)
-#     ax.set_position(temp_ax.get_position())
-#     temp_ax.remove
-
-
-# ax = df_bar_plot_locations.plot.barh("Locations", "Offers")
-# fig = plt.figure()
-# wrap_axes(ax, fig)
+        st.subheader("Seniority vs job offers")
+        st.write("Who has the biggest pool to choose from?")
+        st.pyplot(fig)
 
 
-# st.header("Job offers according to city (pandas chart)")
-# st.pyplot(fig)
+def sidebar():
+    with st.sidebar:
+        choice = option_menu(
+            "What's next?",
+            ["About", "Job offers", "Summary"],
+            icons=["house", "list-ul", "card-text"],
+            menu_icon="app-indicator")
+    return choice
+
+
+if __name__ == "__main__": 
+    data = fetch.get_data_req(fetch.API_SERVER_URL_BASE)
+    if data is None or not data:
+        st.title("Nothing to show :(")
+    else:
+        choice = sidebar()
+        content_printer = ContentPrinter(data)
+        content_printer.content(choice)

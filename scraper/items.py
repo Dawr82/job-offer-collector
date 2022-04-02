@@ -54,7 +54,7 @@ def replace_polish_chars(value: str) -> str:
     return value
 
 
-def parse_locations(locations: str) -> list[str]:
+def parse_locations(locations):
     locations = locations.split(", ")
     try:
         locations.remove("\u2022")
@@ -104,6 +104,7 @@ class NFJOfferContentLoader(ItemLoader):
         replace_polish_chars, filter_location)
     remote_in = Compose(set_remote)
     category_in = MapCompose(lambda v: v.split(', '))
+    seniority_in = Compose(lambda v: v[0].strip().split(', '))
 
     locations_out = Identity()
     required_out = Identity()
