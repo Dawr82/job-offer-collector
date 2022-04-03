@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: job-collector-ns 
+  name: frontend-deployment
+  labels:
+    app: streamlit
+spec:
+  replicas: 3
+  template:
+    metadata:
+      name: frontend-pod
+      labels:
+        app: streamlit
+    spec:
+      containers:
+      - name: streamlit-frontend
+        image: dawrr756hj23/joffc:streamlit-front
+        ports:
+        - containerPort: 8501
+        env:
+        - name: API_SERVER
+          value: api-service
+        - name: API_SERVER_PORT
+          value: 5000
+  selector:
+    matchLabels:
+      app: streamlit
+

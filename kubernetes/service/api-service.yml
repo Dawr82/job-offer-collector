@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  namespace: job-collector-ns
+spec:
+  type: ClusterIP
+  selector:
+    app: api
+  ports:
+  - protocol: TCP
+    port: 5000
+    targetPort: 5000

@@ -135,3 +135,4 @@ scraper/config/sns.py
 log
 NOTES.txt
 test
+kubernetes/secrets

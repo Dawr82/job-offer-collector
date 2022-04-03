@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-deployment
+  namespace: job-collector-ns
+  labels:
+    app: mongo
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: mongo-pod
+      labels:
+        app: mongo
+    spec:
+      containers:
+        - name: mongo-db
+          image: mongo:4.4.6
+          ports:
+          - containerPort: 27017
+            name: "mongo"
+          envFrom:
+          - configMapRef:
+              name: mongo-configmap
+          volumeMounts:
+          - name: mongo-data
+            mountPath: /data/db
+      volumes:
+      - name: mongo-data
+        persistentVolumeClaim:
+          claimName: mongo-pvc
+  selector:
+    matchLabels:
+      app: mongo

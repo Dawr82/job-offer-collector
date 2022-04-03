@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: job-collector-ns 
+  name: api-deployment
+  labels:
+    app: api
+spec:
+  replicas: 3
+  template:
+    metadata:
+      name: api-pod
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: flask-api
+        image: dawrr756hj23/joffc:flask-api
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - configMapRef:
+            name: api-config
+  selector:
+    matchLabels:
+      app: api
+  

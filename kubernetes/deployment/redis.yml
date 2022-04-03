@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-deployment
+  namespace: job-collector-ns
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: redis-pod
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis-db
+          image: redis
+          ports:
+          - containerPort: 6379
+            name: "redis"
+  selector:
+    matchLabels:
+      app: redis
