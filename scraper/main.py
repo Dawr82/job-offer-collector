@@ -137,7 +137,7 @@ def main():
         sys.exit()
 
     def save_helper(save_option):
-        redis_client = redis.Redis(host="localhost", port=6379, db=0)
+        redis_client = redis.Redis(host=settings.REDIS_DB_HOSTNAME, port=settings.REDIS_DB_PORT, db=0)
         mongo_client = pymongo.MongoClient(settings.MONGO_DB_CONNECTION_STRING)
         if save_option == "mongo":
             save(mongo_client)

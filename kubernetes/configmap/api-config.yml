@@ -4,8 +4,8 @@ metadata:
   name: api-configmap
   namespace: job-collector-ns
 data:
-  MONGO_DB_HOSTNAME: mongo-db
+  MONGO_DB_HOSTNAME: mongo-service
   MONGO_DB_PORT: "27017"
   MONGO_DB_JOB_OFFER_DATABASE: scraper
-  REDIS_DB_HOSTNAME: redis-db
+  REDIS_DB_HOSTNAME: redis-service
   REDIS_DB_PORT: "6379"

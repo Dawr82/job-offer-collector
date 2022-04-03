@@ -4,10 +4,11 @@ metadata:
   name: frontend-service
   namespace: job-collector-ns
 spec:
-  type: LoadBalancer
+  type: NodePort
   selector:
     app: streamlit
   ports:
   - protocol: TCP
-    port: 8501
+    nodePort: 30045
+    port: 80
     targetPort: 8501

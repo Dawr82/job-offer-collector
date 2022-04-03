@@ -15,9 +15,8 @@ spec:
     spec:
       containers:
         - name: mongo-db
-          image: mongo:4.4.6
-          command: ["mongod"]
-          args: ["--dbpath=/data/mongoaz"]
+          image: mongo:4.2
+          #args: ["--dbpath=/data/mongoaz"]
           ports:
           - containerPort: 27017
             name: "mongo"

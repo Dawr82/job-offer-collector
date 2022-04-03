@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scraper-configmap
+  namespace: job-collector-ns
+data:
+  MAX_PAGES: "10"
+  REDIS_DB_HOSTNAME: redis-service
+  REDIS_DB_PORT: "6379"
+  API_SERVER_HOSTNAME: api-service
+  MONGO_DB_HOSTNAME: mongo-service
+  MONGO_DB_PORT: "27017"
+  MONGO_DB_JOB_OFFER_DATABASE: scraper
