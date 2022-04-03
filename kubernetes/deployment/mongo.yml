@@ -16,15 +16,17 @@ spec:
       containers:
         - name: mongo-db
           image: mongo:4.4.6
+          command: ["mongod"]
+          args: ["--dbpath=/data/mongoaz"]
           ports:
           - containerPort: 27017
             name: "mongo"
           envFrom:
-          - configMapRef:
-              name: mongo-configmap
+          - secretRef:
+              name: mongo-secret
           volumeMounts:
           - name: mongo-data
-            mountPath: /data/db
+            mountPath: /data/mongoaz
       volumes:
       - name: mongo-data
         persistentVolumeClaim:

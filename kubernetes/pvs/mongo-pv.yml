@@ -9,7 +9,6 @@ spec:
     namespace: job-collector-ns
   capacity:
     storage: 5Gi
-  volumeMode: Filesystem
   persistentVolumeReclaimPolicy: Retain
   accessModes:
   - ReadWriteOnce
@@ -17,3 +16,12 @@ spec:
     secretName: azure-secret
     secretNamespace: job-collector-ns
     shareName: mongo-job-offer-collector
+  mountOptions:
+  - dir_mode=0777
+  - file_mode=0777
+  - uid=0
+  - gid=0
+  - mfsymlinks
+  - cache=strict
+  - nosharesock
+  - nobrl

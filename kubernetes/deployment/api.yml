@@ -20,7 +20,9 @@ spec:
         - containerPort: 5000
         envFrom:
         - configMapRef:
-            name: api-config
+            name: api-configmap
+        - secretRef:
+            name: api-secret
   selector:
     matchLabels:
       app: api
