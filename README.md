@@ -1,4 +1,9 @@
 # job-offer-collector
+
+### IMPORTANT NOTE
+**Scraping is done solely on learning purposes. Gathered data is just simply thrown away.
+It isn't meant to be published anywhere or used in any way that would violate owner's rights to it.**
+
 This application aims at collecting job-related data from various polish job listing websites.  
 Due to its microservice architecture, it can be easily deployed as Docker containers (docker-compose preferably)  
 or in other container-based environments (like Kubernetes).
